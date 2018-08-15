@@ -507,7 +507,6 @@ final class DefaultJsonClient implements JsonClient {
                         .withSupportsCbor(supportsCbor)
                         .withSupportsIon(false)
                         .withBaseServiceExceptionClass(software.amazon.awssdk.services.json.model.JsonException.class)
-                        .withContentTypeOverride("")
                         .addErrorMetadata(
                                 new JsonErrorShapeMetadata().withErrorCode("InvalidInput").withModeledClass(
                                         InvalidInputException.class)), AwsJsonProtocolMetadata.builder().protocolVersion("1.1")

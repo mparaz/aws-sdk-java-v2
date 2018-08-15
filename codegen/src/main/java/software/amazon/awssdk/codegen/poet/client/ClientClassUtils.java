@@ -121,5 +121,4 @@ final class ClientClassUtils {
                          .returns(typeVariableName)
                          .build();
     }
-
 }
