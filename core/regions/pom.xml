@@ -24,7 +24,7 @@
         <artifactId>core</artifactId>
         <version>2.0.0-preview-12-SNAPSHOT</version>
     </parent>
-
+    <packaging>bundle</packaging>
     <artifactId>regions</artifactId>
     <name>AWS Java SDK :: Regions</name>
     <dependencies>

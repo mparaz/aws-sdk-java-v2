@@ -30,5 +30,5 @@
         with AWS Glue Service
     </description>
     <url>https://aws.amazon.com/sdkforjava</url>
-
+    <packaging>bundle</packaging>
 </project>

@@ -11,5 +11,6 @@
 
     <artifactId>annotations</artifactId>
     <name>AWS Java SDK :: Annotations</name>
+    <packaging>bundle</packaging>
 
 </project>

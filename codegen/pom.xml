@@ -144,9 +144,18 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
             </plugin>
+                    <plugin>
+                        <groupId>org.apache.felix</groupId>
+                        <artifactId>maven-bundle-plugin</artifactId>
+                    </plugin>
+                    <!--<plugin>-->
+                        <!--<groupId>org.apache.maven.plugins</groupId>-->
+                        <!--<artifactId>maven-jar-plugin</artifactId>-->
+                    <!--</plugin>-->
         </plugins>
     </build>
 
+    <packaging>bundle</packaging>
     <!-- This profile uses the JAPICMP plugin to generate a report of changes between the release version and the latest version -->
     <!-- For more information on the plugin, see https://github.com/siom79/japicmp -->
     <profiles>

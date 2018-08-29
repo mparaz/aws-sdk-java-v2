@@ -30,6 +30,7 @@
         Amazon Web Services. Users need to depend on aws-java-sdk artifact for accessing individual client classes.
     </description>
     <url>https://aws.amazon.com/sdkforjava</url>
+    <packaging>bundle</packaging>
     <dependencies>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -211,6 +212,60 @@
                     </properties>
                 </configuration>
             </plugin>
+            <!--<plugin>-->
+                <!--<groupId>org.apache.felix</groupId>-->
+                <!--<artifactId>maven-bundle-plugin</artifactId>-->
+                <!--<version>3.5.1</version>-->
+                <!--<extensions>true</extensions>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<id>bundle-manifest</id>-->
+                        <!--<phase>process-classes</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>manifest</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+                <!--<configuration>-->
+                    <!--<instructions>-->
+                        <!--<Export-Package>*</Export-Package>-->
+                        <!--&lt;!&ndash;<Import-Package>!org.junit.*,!org.springframework.*,!org.apache.avalon.*,!org.apache.log.*,!org.aspectj.*,com.fasterxml.jackson.*,org.apache.http.conn.routing,com.sun.org.apache.xerces.internal.jaxp.*;resolution:=optional,com.sun.org.apache.xml.internal.dtm.*;resolution:=optional,com.sun.org.apache.xml.internal.dtm.ref.*;resolution:=optional,com.sun.org.apache.xpath.internal.*;resolution:=optional,*</Import-Package>&ndash;&gt;-->
+                        <!--<Require-Capability>-->
+                            <!--osgi.extender; filter:="(osgi.extender=osgi.serviceloader.processor)"-->
+                        <!--</Require-Capability>-->
+                    <!--</instructions>-->
+                <!--</configuration>-->
+            <!--</plugin>-->
+            <!--<plugin>-->
+                <!--<groupId>org.apache.maven.plugins</groupId>-->
+                <!--<artifactId>maven-jar-plugin</artifactId>-->
+                <!--<version>3.1.0</version>-->
+                <!--<configuration>-->
+                    <!--<archive>-->
+                        <!--<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>-->
+                    <!--</archive>-->
+                <!--</configuration>-->
+            <!--</plugin>-->
+            <!--<plugin>-->
+                <!--<artifactId>maven-assembly-plugin</artifactId>-->
+                <!--<configuration>-->
+                    <!--<descriptorRefs>-->
+                        <!--<descriptorRef>jar-with-dependencies</descriptorRef>-->
+                    <!--</descriptorRefs>-->
+                    <!--<archive>-->
+                        <!--<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>-->
+                    <!--</archive>-->
+                <!--</configuration>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<id>assemble-all</id>-->
+                        <!--<phase>package</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>single</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            <!--</plugin>-->
         </plugins>
 
         <pluginManagement>
