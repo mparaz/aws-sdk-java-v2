@@ -30,6 +30,7 @@ import org.w3c.dom.Node;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.awscore.http.response.DefaultErrorResponseHandler;
 import software.amazon.awssdk.awscore.http.response.StaxResponseHandler;
+import software.amazon.awssdk.awscore.internal.protocol.xml.StaxOperationMetadata;
 import software.amazon.awssdk.awscore.protocol.xml.StandardErrorUnmarshaller;
 import software.amazon.awssdk.codegen.model.intermediate.IntermediateModel;
 import software.amazon.awssdk.codegen.model.intermediate.OperationModel;
@@ -94,20 +95,23 @@ public class QueryXmlProtocolSpec implements ProtocolSpec {
 
         if (opModel.hasStreamingOutput()) {
             return CodeBlock.builder()
-                            .addStatement("\n\n$T<$T> responseHandler = $T.createStreamingResponseHandler(new $T())",
+                            .addStatement("\n\n$T<$T> responseHandler = new $T<>(new $T(), new $T()"
+                                          + ".withHasStreamingSuccessResponse(true))",
                                           HttpResponseHandler.class,
                                           responseType,
                                           StaxResponseHandler.class,
-                                          unmarshaller)
+                                          unmarshaller,
+                                          StaxOperationMetadata.class)
                             .build();
         }
         return CodeBlock.builder()
-                        .addStatement("\n\n$T<$T> responseHandler = new $T<$T>(new $T())",
-                                      StaxResponseHandler.class,
+                        .addStatement("\n\n$T<$T> responseHandler = new $T<>(new $T(), new $T().withHasStreamingSuccessResponse"
+                                      + "(false))",
+                                      HttpResponseHandler.class,
                                       responseType,
                                       StaxResponseHandler.class,
-                                      responseType,
-                                      unmarshaller)
+                                      unmarshaller,
+                                      StaxOperationMetadata.class)
                         .build();
     }
 

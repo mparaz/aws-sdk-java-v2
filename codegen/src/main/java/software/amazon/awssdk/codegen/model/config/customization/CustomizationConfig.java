@@ -139,6 +139,11 @@ public class CustomizationConfig {
 
     private boolean skipSyncClientGeneration;
 
+    /**
+     * Custom Response metadata
+     */
+    private Map<String, String> customResponseMetadata;
+
     private CustomizationConfig() {
     }
 

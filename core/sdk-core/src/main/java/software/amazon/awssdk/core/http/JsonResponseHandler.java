@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.Map;
-import software.amazon.awssdk.annotations.ReviewBeforeRelease;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
 import software.amazon.awssdk.core.SdkStandardLogger;
 import software.amazon.awssdk.core.exception.Crc32MismatchException;
@@ -40,8 +39,7 @@ import software.amazon.awssdk.utils.Logger;
  * @param <T> Indicates the type being unmarshalled by this response handler.
  */
 @SdkProtectedApi
-@ReviewBeforeRelease("Metadata in base result has been broken. Fix this and deal with AwsResponseHandlerAdapter")
-public final class JsonResponseHandler<T> implements HttpResponseHandler<T> {
+public class JsonResponseHandler<T> implements HttpResponseHandler<T> {
     private static final Logger log = Logger.loggerFor(JsonResponseHandler.class);
 
     private final JsonFactory jsonFactory;
@@ -79,6 +77,7 @@ public final class JsonResponseHandler<T> implements HttpResponseHandler<T> {
     /**
      * @see HttpResponseHandler#handle(SdkHttpFullResponse, ExecutionAttributes)
      */
+    @Override
     public T handle(SdkHttpFullResponse response, ExecutionAttributes executionAttributes) throws Exception {
         SdkStandardLogger.REQUEST_LOGGER.trace(() -> "Parsing service response JSON.");
         SdkStandardLogger.REQUEST_ID_LOGGER.debug(() -> X_AMZN_REQUEST_ID_HEADER + " : " +
@@ -132,7 +131,7 @@ public final class JsonResponseHandler<T> implements HttpResponseHandler<T> {
     }
 
     @Override
-    public boolean needsConnectionLeftOpen() {
+    public final boolean needsConnectionLeftOpen() {
         return needsConnectionLeftOpen;
     }
 

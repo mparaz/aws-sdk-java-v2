@@ -13,12 +13,15 @@
  * permissions and limitations under the License.
  */
 
-package software.amazon.awssdk.core;
+package software.amazon.awssdk.awscore;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import software.amazon.awssdk.annotations.Immutable;
 import software.amazon.awssdk.annotations.SdkPublicApi;
+import software.amazon.awssdk.core.SdkStandardLogger;
+import software.amazon.awssdk.utils.ToString;
 
 /**
  * Represents additional metadata included with a response from a service. Response
@@ -26,15 +29,16 @@ import software.amazon.awssdk.annotations.SdkPublicApi;
  * can be used in the event a service call isn't working as expected and you
  * need to work with AWS support to debug an issue.
  * <p>
- * Access to AWS request IDs is also available through the com.amazonaws.request
- * logger in the AWS SDK for Java.
+ * Access to AWS request IDs is also available through the {@link SdkStandardLogger#REQUEST_ID_LOGGER}
+ * logger.
  */
 @Immutable
 @SdkPublicApi
-public class SdkResponseMetadata {
+public class AwsResponseMetadata {
     public static final String AWS_REQUEST_ID = "AWS_REQUEST_ID";
+    private static final String UNKNOWN = "UNKNOWN";
 
-    protected final Map<String, String> metadata;
+    private final Map<String, String> metadata;
 
     /**
      * Creates a new ResponseMetadata object from a specified map of raw
@@ -43,20 +47,8 @@ public class SdkResponseMetadata {
      * @param metadata
      *            The raw metadata for the new ResponseMetadata object.
      */
-    public SdkResponseMetadata(Map<String, String> metadata) {
+    public AwsResponseMetadata(Map<String, String> metadata) {
         this.metadata = Collections.unmodifiableMap(metadata);
-    }
-
-    /**
-     * Creates a new ResponseMetadata object from an existing ResponseMetadata
-     * object.
-     *
-     * @param originalResponseMetadata
-     *            The ResponseMetadata object from which to create the new
-     *            object.
-     */
-    public SdkResponseMetadata(SdkResponseMetadata originalResponseMetadata) {
-        this(originalResponseMetadata.metadata);
     }
 
     /**
@@ -67,19 +59,31 @@ public class SdkResponseMetadata {
      * @return The AWS request ID contained in this response metadata object.
      */
     public String requestId() {
-        return metadata.get(AWS_REQUEST_ID);
+        return getValue(AWS_REQUEST_ID);
     }
 
-    public String metadata(String key) {
-        return metadata.get(key);
+    public final String metadata(String key) {
+        return getValue(key);
+    }
+
+    public final Map<String, String> metadata() {
+        return metadata;
     }
 
     @Override
     public String toString() {
-        if (metadata == null) {
-            return "{}";
-        }
-        return metadata.toString();
+        return ToString.builder("AwsResponseMetadata")
+                       .add("metadata", metadata.keySet())
+                       .build();
     }
 
+    /**
+     * Get the value based on the key, returning {@link #UNKNOWN} if the value is null.
+     *
+     * @param key the key of the value
+     * @return the value or {@link #UNKNOWN} if not present.
+     */
+    protected final String getValue(String key) {
+        return Optional.ofNullable(metadata.get(key)).orElse(UNKNOWN);
+    }
 }
