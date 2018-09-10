@@ -26,7 +26,7 @@
 
     <artifactId>netty-nio-client</artifactId>
     <name>AWS Java SDK :: HTTP Clients :: Netty Non-Blocking I/O</name>
-
+    <packaging>bundle</packaging>
 
     <dependencies>
 
@@ -155,6 +155,28 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>3.5.1</version>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <instructions>
+                        <Export-Package>*</Export-Package>
+                        <Provide-Capability>osgi.serviceloader;osgi.serviceloader=software.amazon.awssdk.http.async.SdkAsyncHttpService</Provide-Capability>
+                        <Require-Capability>osgi.extender; filter:="(osgi.extender=osgi.serviceloader.registrar)"</Require-Capability>
+                    </instructions>
+                </configuration>
             </plugin>
         </plugins>
     </build>
