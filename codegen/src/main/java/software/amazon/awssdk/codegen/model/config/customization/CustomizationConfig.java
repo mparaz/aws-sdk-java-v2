@@ -387,4 +387,12 @@ public class CustomizationConfig {
     public void setSkipSyncClientGeneration(boolean skipSyncClientGeneration) {
         this.skipSyncClientGeneration = skipSyncClientGeneration;
     }
+
+    public Map<String, String> getCustomResponseMetadata() {
+        return customResponseMetadata;
+    }
+
+    public void setCustomResponseMetadata(Map<String, String> customResponseMetadata) {
+        this.customResponseMetadata = customResponseMetadata;
+    }
 }

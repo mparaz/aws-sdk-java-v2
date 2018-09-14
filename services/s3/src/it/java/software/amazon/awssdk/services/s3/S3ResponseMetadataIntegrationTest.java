@@ -30,6 +30,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectAclResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Response;
+import software.amazon.awssdk.services.s3.model.S3ResponseMetadata;
 import software.amazon.awssdk.testutils.RandomTempFile;
 
 public class S3ResponseMetadataIntegrationTest extends S3IntegrationTestBase {
@@ -83,7 +84,6 @@ public class S3ResponseMetadataIntegrationTest extends S3IntegrationTestBase {
     private void verifyResponseMetadata(S3Response response) {
         S3ResponseMetadata s3ResponseMetadata = response.responseMetadata();
         assertThat(s3ResponseMetadata).isNotNull();
-        assertThat(s3ResponseMetadata.metadata().size()).isEqualTo(3);
         assertThat(s3ResponseMetadata.requestId()).isNotEqualTo("UNKNOWN");
         assertThat(s3ResponseMetadata.extendedRequestId()).isNotEqualTo("UNKNOWN");
     }

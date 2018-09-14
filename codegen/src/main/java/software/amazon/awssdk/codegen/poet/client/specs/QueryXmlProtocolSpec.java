@@ -93,25 +93,15 @@ public class QueryXmlProtocolSpec implements ProtocolSpec {
         ClassName unmarshaller = poetExtensions.getTransformClass(opModel.getReturnType().getReturnType() + "Unmarshaller");
         ClassName responseType = poetExtensions.getModelClass(opModel.getReturnType().getReturnType());
 
-        if (opModel.hasStreamingOutput()) {
-            return CodeBlock.builder()
-                            .addStatement("\n\n$T<$T> responseHandler = new $T<>(new $T(), new $T()"
-                                          + ".withHasStreamingSuccessResponse(true))",
-                                          HttpResponseHandler.class,
-                                          responseType,
-                                          StaxResponseHandler.class,
-                                          unmarshaller,
-                                          StaxOperationMetadata.class)
-                            .build();
-        }
         return CodeBlock.builder()
                         .addStatement("\n\n$T<$T> responseHandler = new $T<>(new $T(), new $T().withHasStreamingSuccessResponse"
-                                      + "(false))",
+                                      + "($L))",
                                       HttpResponseHandler.class,
                                       responseType,
                                       StaxResponseHandler.class,
                                       unmarshaller,
-                                      StaxOperationMetadata.class)
+                                      StaxOperationMetadata.class,
+                                      opModel.hasStreamingOutput())
                         .build();
     }
 

@@ -16,38 +16,54 @@
 package software.amazon.awssdk.codegen.poet.model;
 
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import javax.lang.model.element.Modifier;
 import software.amazon.awssdk.awscore.AwsResponse;
+import software.amazon.awssdk.awscore.AwsResponseMetadata;
 import software.amazon.awssdk.codegen.model.intermediate.IntermediateModel;
 import software.amazon.awssdk.codegen.poet.ClassSpec;
 import software.amazon.awssdk.codegen.poet.PoetExtensions;
 import software.amazon.awssdk.codegen.poet.PoetUtils;
+import software.amazon.awssdk.utils.CollectionUtils;
 
 public class AwsServiceBaseResponseSpec implements ClassSpec {
     private final IntermediateModel intermediateModel;
     private final PoetExtensions poetExtensions;
+    private final boolean hasCustomResponseMetadata;
+    private final ClassName customResponseMetadata;
 
     public AwsServiceBaseResponseSpec(IntermediateModel intermediateModel) {
         this.intermediateModel = intermediateModel;
         this.poetExtensions = new PoetExtensions(this.intermediateModel);
+        this.hasCustomResponseMetadata =
+            !CollectionUtils.isNullOrEmpty(intermediateModel.getCustomizationConfig().getCustomResponseMetadata());
+        this.customResponseMetadata = poetExtensions.getCustomResponseMetadataClass();
     }
 
     @Override
     public TypeSpec poetSpec() {
-        TypeSpec.Builder builder = TypeSpec.classBuilder(className())
-                .addAnnotation(PoetUtils.generatedAnnotation())
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .superclass(ClassName.get(AwsResponse.class))
-                .addMethod(MethodSpec.constructorBuilder()
-                        .addModifiers(Modifier.PROTECTED)
-                        .addParameter(className().nestedClass("Builder"), "builder")
-                        .addStatement("super(builder)")
-                        .build())
-                .addType(builderInterfaceSpec())
-                .addType(builderImplSpec());
-        return builder.build();
+        MethodSpec.Builder constructorBuilder =
+            MethodSpec.constructorBuilder()
+                      .addModifiers(Modifier.PROTECTED)
+                      .addParameter(className().nestedClass("Builder"), "builder")
+                      .addStatement("super(builder)");
+
+        TypeSpec.Builder classBuilder = TypeSpec.classBuilder(className())
+                                           .addAnnotation(PoetUtils.generatedAnnotation())
+                                           .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                                           .superclass(ClassName.get(AwsResponse.class))
+                                           .addType(builderInterfaceSpec())
+                                           .addType(builderImplSpec());
+
+        if (hasCustomResponseMetadata) {
+            addCustomResponseMetadata(classBuilder, constructorBuilder);
+        }
+
+        classBuilder.addMethod(constructorBuilder.build());
+        return classBuilder.build();
     }
 
     @Override
@@ -56,34 +72,103 @@ public class AwsServiceBaseResponseSpec implements ClassSpec {
     }
 
     private TypeSpec builderInterfaceSpec() {
-        return TypeSpec.interfaceBuilder("Builder")
-                .addModifiers(Modifier.PUBLIC)
-                .addSuperinterface(ClassName.get(AwsResponse.class).nestedClass("Builder"))
+        TypeSpec.Builder builder = TypeSpec.interfaceBuilder("Builder")
+                                           .addModifiers(Modifier.PUBLIC)
+                                           .addSuperinterface(ClassName.get(AwsResponse.class).nestedClass("Builder"))
+                                           .addMethod(MethodSpec.methodBuilder("build")
+                                                                .addAnnotation(Override.class)
+                                                                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                                                                .returns(className())
+                                                                .build());
 
-                .addMethod(MethodSpec.methodBuilder("build")
-                        .addAnnotation(Override.class)
-                        .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                        .returns(className())
-                        .build())
-                .build();
+        if (hasCustomResponseMetadata) {
+            addCustomResponseMetadataToInterface(builder);
+        }
+
+        return builder.build();
+    }
+
+    public ClassName builderInterfaceName() {
+        return className().nestedClass("Builder");
     }
 
     private TypeSpec builderImplSpec() {
-        return TypeSpec.classBuilder("BuilderImpl")
-                .addModifiers(Modifier.PROTECTED, Modifier.STATIC, Modifier.ABSTRACT)
-                .addSuperinterface(className().nestedClass("Builder"))
-                .superclass(ClassName.get(AwsResponse.class).nestedClass("BuilderImpl"))
+        MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder()
+                                                .addModifiers(Modifier.PROTECTED)
+                                                .addParameter(className(), "response")
+                                                .addStatement("super(response)");
 
-                .addMethod(MethodSpec.constructorBuilder()
-                        .addModifiers(Modifier.PROTECTED)
-                        .build())
+        if (hasCustomResponseMetadata) {
+            constructorBuilder.addStatement("this.responseMetadata = response.responseMetadata()");
+        }
 
-                .addMethod(MethodSpec.constructorBuilder()
-                        .addModifiers(Modifier.PROTECTED)
-                        .addParameter(className(), "response")
-                        .addStatement("super(response)")
-                        .build())
+        TypeSpec.Builder classBuilder = TypeSpec.classBuilder("BuilderImpl")
+                                           .addModifiers(Modifier.PROTECTED, Modifier.STATIC, Modifier.ABSTRACT)
+                                           .addSuperinterface(className().nestedClass("Builder"))
+                                           .superclass(ClassName.get(AwsResponse.class).nestedClass("BuilderImpl"))
+                                           .addMethod(MethodSpec.constructorBuilder()
+                                                                .addModifiers(Modifier.PROTECTED)
+                                                                .build())
+                                           .addMethod(constructorBuilder.build());
 
-                .build();
+        if (hasCustomResponseMetadata) {
+            addCustomResponseMetadataToImpl(classBuilder);
+        }
+
+        return classBuilder.build();
+    }
+
+    private void addCustomResponseMetadata(TypeSpec.Builder classBuilder, MethodSpec.Builder constructorBuilder) {
+        constructorBuilder.addStatement("this.responseMetadata = builder.responseMetadata()");
+
+        classBuilder.addField(FieldSpec.builder(customResponseMetadata, "responseMetadata",
+                                                Modifier.PRIVATE, Modifier.FINAL)
+                                       .build());
+
+        classBuilder.addMethod(MethodSpec.methodBuilder("responseMetadata")
+                                         .returns(customResponseMetadata)
+                                         .addModifiers(Modifier.PUBLIC)
+                                         .addAnnotation(Override.class)
+                                         .addCode("return responseMetadata;")
+                                         .build());
+
+    }
+
+    private void addCustomResponseMetadataToInterface(TypeSpec.Builder builder) {
+        builder.addMethod(MethodSpec.methodBuilder("responseMetadata")
+                                    .returns(customResponseMetadata)
+                                    .addAnnotation(Override.class)
+                                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                                    .build());
+
+        builder.addMethod(MethodSpec.methodBuilder("responseMetadata")
+                                    .addParameter(AwsResponseMetadata.class, "metadata")
+                                    .returns(builderInterfaceName())
+                                    .addAnnotation(Override.class)
+                                    .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                                    .build());
+    }
+
+    private void addCustomResponseMetadataToImpl(TypeSpec.Builder classBuilder) {
+        classBuilder.addField(FieldSpec.builder(customResponseMetadata, "responseMetadata", Modifier.PRIVATE).build());
+
+        classBuilder.addMethod(MethodSpec.methodBuilder("responseMetadata")
+                                         .returns(customResponseMetadata)
+                                         .addAnnotation(Override.class)
+                                         .addModifiers(Modifier.PUBLIC)
+                                         .addStatement("return responseMetadata")
+                                         .build());
+
+        classBuilder.addMethod(MethodSpec.methodBuilder("responseMetadata")
+                                         .addParameter(AwsResponseMetadata.class, "responseMetadata")
+                                         .returns(builderInterfaceName())
+                                         .addAnnotation(Override.class)
+                                         .addModifiers(Modifier.PUBLIC)
+                                         .addCode(CodeBlock.builder()
+                                                           .add("this.responseMetadata = $T.create(responseMetadata);\n",
+                                                                customResponseMetadata)
+                                                           .add("return this;")
+                                                           .build())
+                                         .build());
     }
 }

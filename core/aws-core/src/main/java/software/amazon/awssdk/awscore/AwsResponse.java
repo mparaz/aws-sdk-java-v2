@@ -42,7 +42,7 @@ public abstract class AwsResponse extends SdkResponse {
 
         AwsResponseMetadata responseMetadata();
 
-        Builder responseMetadata(AwsResponseMetadata responseMetadata);
+        Builder responseMetadata(AwsResponseMetadata metadata);
 
         @Override
         AwsResponse build();

@@ -15,7 +15,7 @@
 
 package software.amazon.awssdk.awscore.http.response;
 
-import static software.amazon.awssdk.awscore.AwsResponseMetadata.AWS_REQUEST_ID;
+import static software.amazon.awssdk.awscore.DefaultAwsResponseMetadata.AWS_REQUEST_ID;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -23,10 +23,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
-import software.amazon.awssdk.annotations.ReviewBeforeRelease;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
 import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.awscore.AwsResponseMetadata;
+import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata;
 import software.amazon.awssdk.awscore.internal.protocol.xml.StaxOperationMetadata;
 import software.amazon.awssdk.awscore.internal.protocol.xml.VoidStaxUnmarshaller;
 import software.amazon.awssdk.awscore.protocol.xml.StaxUnmarshallerContext;
@@ -48,7 +48,7 @@ import software.amazon.awssdk.utils.XmlUtils;
  * @param <T> Indicates the type being unmarshalled by this response handler.
  */
 @SdkProtectedApi
-public class StaxResponseHandler<T extends AwsResponse> implements HttpResponseHandler<T> {
+public final class StaxResponseHandler<T extends AwsResponse> implements HttpResponseHandler<T> {
     private static final Logger log = Logger.loggerFor(StaxResponseHandler.class);
 
     /**
@@ -88,7 +88,7 @@ public class StaxResponseHandler<T extends AwsResponse> implements HttpResponseH
      * @see HttpResponseHandler#handle(SdkHttpFullResponse, ExecutionAttributes)
      */
     @Override
-    public final T handle(SdkHttpFullResponse response, ExecutionAttributes executionAttributes) throws Exception {
+    public T handle(SdkHttpFullResponse response, ExecutionAttributes executionAttributes) throws Exception {
         SdkStandardLogger.REQUEST_LOGGER.trace(() -> "Parsing service response XML.");
 
         T result = unmarshalResponse(response, responseUnmarshaller);
@@ -100,7 +100,7 @@ public class StaxResponseHandler<T extends AwsResponse> implements HttpResponseH
      * Create the default {@link AwsResponseMetadata}. Subclasses may override this to create a
      * subclass of {@link AwsResponseMetadata}.
      */
-    protected AwsResponseMetadata generateResponseMetadata(SdkHttpResponse response, StaxUnmarshallerContext
+    private AwsResponseMetadata generateResponseMetadata(SdkHttpResponse response, StaxUnmarshallerContext
         unmarshallerContext) {
         Map<String, String> metadata = unmarshallerContext.getMetadata();
 
@@ -108,17 +108,9 @@ public class StaxResponseHandler<T extends AwsResponse> implements HttpResponseH
             metadata.put(AWS_REQUEST_ID,
                          response.firstMatchingHeader(X_AMZN_REQUEST_ID_HEADER).orElse(null));
         }
-        return new AwsResponseMetadata((metadata));
-    }
 
-    /**
-     * Hook for subclasses to override in order to collect additional metadata
-     * from service responses.
-     *
-     * @param unmarshallerContext The unmarshaller context used to configure a service's response
-     * data.
-     */
-    protected void registerAdditionalMetadataExpressions(StaxUnmarshallerContext unmarshallerContext) {
+        response.headers().forEach((key, value) -> metadata.put(key, value.get(0)));
+        return DefaultAwsResponseMetadata.create(metadata);
     }
 
     /**
@@ -133,7 +125,9 @@ public class StaxResponseHandler<T extends AwsResponse> implements HttpResponseH
         return operationMetadata.isHasStreamingSuccessResponse();
     }
 
-    private T unmarshalResponse(SdkHttpFullResponse response, Unmarshaller<T, StaxUnmarshallerContext> unmarshaller) throws Exception {
+    @SuppressWarnings("unchecked")
+    private T unmarshalResponse(SdkHttpFullResponse response,
+                                Unmarshaller<T, StaxUnmarshallerContext> unmarshaller) throws Exception {
         XMLEventReader eventReader = null;
         try {
             InputStream content = response.content().orElse(
@@ -144,7 +138,6 @@ public class StaxResponseHandler<T extends AwsResponse> implements HttpResponseH
             StaxUnmarshallerContext unmarshallerContext = new StaxUnmarshallerContext(eventReader, response.headers());
             unmarshallerContext.registerMetadataExpression("ResponseMetadata/RequestId", 2, AWS_REQUEST_ID);
             unmarshallerContext.registerMetadataExpression("requestId", 2, AWS_REQUEST_ID);
-            registerAdditionalMetadataExpressions(unmarshallerContext);
 
             T result = unmarshaller.unmarshall(unmarshallerContext);
 

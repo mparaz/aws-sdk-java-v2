@@ -15,7 +15,7 @@
 
 package software.amazon.awssdk.awscore.http.response;
 
-import static software.amazon.awssdk.awscore.AwsResponseMetadata.AWS_REQUEST_ID;
+import static software.amazon.awssdk.awscore.DefaultAwsResponseMetadata.AWS_REQUEST_ID;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import java.util.HashMap;
@@ -23,6 +23,7 @@ import java.util.Map;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
 import software.amazon.awssdk.awscore.AwsResponse;
 import software.amazon.awssdk.awscore.AwsResponseMetadata;
+import software.amazon.awssdk.awscore.DefaultAwsResponseMetadata;
 import software.amazon.awssdk.core.http.JsonResponseHandler;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.runtime.transform.JsonUnmarshallerContext;
@@ -31,7 +32,7 @@ import software.amazon.awssdk.http.SdkHttpFullResponse;
 import software.amazon.awssdk.http.SdkHttpResponse;
 
 @SdkProtectedApi
-public class AwsJsonResponseHandler<T extends AwsResponse> extends JsonResponseHandler<T> {
+public final class AwsJsonResponseHandler<T> extends JsonResponseHandler<T> {
 
     public AwsJsonResponseHandler(Unmarshaller<T, JsonUnmarshallerContext> responseUnmarshaller, Map<Class<?>, Unmarshaller<?,
         JsonUnmarshallerContext>> simpleTypeUnmarshallers, JsonFactory jsonFactory, boolean needsConnectionLeftOpen,
@@ -41,21 +42,27 @@ public class AwsJsonResponseHandler<T extends AwsResponse> extends JsonResponseH
 
     @Override
     @SuppressWarnings("unchecked")
-    public final T handle(SdkHttpFullResponse response, ExecutionAttributes executionAttributes) throws Exception {
+    public T handle(SdkHttpFullResponse response, ExecutionAttributes executionAttributes) throws Exception {
         T result = super.handle(response, executionAttributes);
 
-        AwsResponseMetadata responseMetadata = generateResponseMetadata(response);
-        return (T) result.toBuilder().responseMetadata(responseMetadata).build();
+        // As T is not bounded to AwsResponse, we need to do explicitly cast here.
+        if (result instanceof AwsResponse) {
+            AwsResponseMetadata responseMetadata = generateResponseMetadata(response);
+            return (T) ((AwsResponse) result).toBuilder().responseMetadata(responseMetadata).build();
+        }
+
+        return result;
     }
 
     /**
-     * Create the default {@link AwsResponseMetadata}. Subclasses may override this to create a
-     * subclass of {@link AwsResponseMetadata}.
+     * Create the default {@link AwsResponseMetadata}.
      */
-    protected AwsResponseMetadata generateResponseMetadata(SdkHttpResponse response) {
+    private AwsResponseMetadata generateResponseMetadata(SdkHttpResponse response) {
         Map<String, String> metadata = new HashMap<>();
 
         metadata.put(AWS_REQUEST_ID, response.firstMatchingHeader(X_AMZN_REQUEST_ID_HEADER).orElse(null));
-        return new AwsResponseMetadata(metadata);
+        response.headers().forEach((key, value) -> metadata.put(key, value.get(0)));
+
+        return DefaultAwsResponseMetadata.create(metadata);
     }
 }
